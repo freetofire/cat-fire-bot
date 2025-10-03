@@ -1,0 +1,356 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Cat Fire - Admin Panel</title>
+    <link rel="stylesheet" href="styles/admin.css">
+    <script src="https://www.gstatic.com/firebasejs/10.7.1/firebase-app-compat.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/10.7.1/firebase-auth-compat.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/10.7.1/firebase-database-compat.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/10.7.1/firebase-firestore-compat.js"></script>
+</head>
+<body>
+    <!-- Login Screen -->
+    <div id="admin-login" class="admin-login">
+        <div class="login-container">
+            <h1>Admin Panel</h1>
+            <form id="admin-login-form">
+                <input type="email" id="admin-email" placeholder="Email" required>
+                <input type="password" id="admin-password" placeholder="Password" required>
+                <button type="submit" class="btn-primary">Login</button>
+            </form>
+        </div>
+    </div>
+
+    <!-- Admin Dashboard -->
+    <div id="admin-dashboard" class="admin-dashboard hidden">
+        <aside class="sidebar">
+            <h2>Cat Fire Admin</h2>
+            <nav class="admin-nav">
+                <button class="nav-btn active" onclick="showSection('overview')">Overview</button>
+                <button class="nav-btn" onclick="showSection('users')">Users</button>
+                <button class="nav-btn" onclick="showSection('tasks')">Task Settings</button>
+                <button class="nav-btn" onclick="showSection('spin')">Spin Wheel</button>
+                <button class="nav-btn" onclick="showSection('withdrawals')">Withdrawals</button>
+                <button class="nav-btn" onclick="showSection('referrals')">Referrals</button>
+                <button class="nav-btn" onclick="showSection('settings')">Settings</button>
+                <button class="nav-btn logout" onclick="adminLogout()">Logout</button>
+            </nav>
+        </aside>
+
+        <main class="admin-content">
+            <!-- Overview Section -->
+            <section id="overview-section" class="admin-section active">
+                <h1>Dashboard Overview</h1>
+                <div class="stats-grid">
+                    <div class="stat-card">
+                        <h3>Total Users</h3>
+                        <div class="stat-value" id="total-users">0</div>
+                    </div>
+                    <div class="stat-card">
+                        <h3>Active Today</h3>
+                        <div class="stat-value" id="active-users">0</div>
+                    </div>
+                    <div class="stat-card">
+                        <h3>Total Earnings Paid</h3>
+                        <div class="stat-value">$<span id="total-paid">0.00</span></div>
+                    </div>
+                    <div class="stat-card">
+                        <h3>Pending Withdrawals</h3>
+                        <div class="stat-value" id="pending-withdrawals">0</div>
+                    </div>
+                </div>
+            </section>
+
+            <!-- Users Section -->
+            <section id="users-section" class="admin-section">
+                <h1>User Management</h1>
+                <div class="search-bar">
+                    <input type="text" id="user-search" placeholder="Search users by ID or name">
+                </div>
+                <div class="users-table">
+                    <table>
+                        <thead>
+                            <tr>
+                                <th>User ID</th>
+                                <th>Name</th>
+                                <th>Balance</th>
+                                <th>Referrals</th>
+                                <th>Status</th>
+                                <th>Actions</th>
+                            </tr>
+                        </thead>
+                        <tbody id="users-table-body"></tbody>
+                    </table>
+                </div>
+            </section>
+
+            <!-- Task Settings Section -->
+            <section id="tasks-section" class="admin-section">
+                <h1>Task Settings</h1>
+                
+                <div class="settings-card">
+                    <h2>Ad Task Settings</h2>
+                    <div class="form-group">
+                        <label>Reward Amount ($)</label>
+                        <input type="number" id="ad-reward-amount" step="0.01">
+                    </div>
+                    <div class="form-group">
+                        <label>Daily Limit</label>
+                        <input type="number" id="ad-daily-limit">
+                    </div>
+                    <div class="form-group">
+                        <label>Task Status</label>
+                        <select id="ad-task-status">
+                            <option value="enabled">Enabled</option>
+                            <option value="disabled">Disabled</option>
+                        </select>
+                    </div>
+                    <button class="btn-primary" onclick="saveAdSettings()">Save Settings</button>
+                </div>
+
+                <div class="settings-card">
+                    <h2>Link Visit Task Settings</h2>
+                    <div class="form-group">
+                        <label>Link 1 URL</label>
+                        <input type="url" id="link1-url" placeholder="https://example.com">
+                    </div>
+                    <div class="form-group">
+                        <label>Link 1 Reward ($)</label>
+                        <input type="number" id="link1-reward" step="0.01">
+                    </div>
+                    <div class="form-group">
+                        <label>Link 2 URL</label>
+                        <input type="url" id="link2-url" placeholder="https://example.com">
+                    </div>
+                    <div class="form-group">
+                        <label>Link 2 Reward ($)</label>
+                        <input type="number" id="link2-reward" step="0.01">
+                    </div>
+                    <div class="form-group">
+                        <label>Link 3 URL</label>
+                        <input type="url" id="link3-url" placeholder="https://example.com">
+                    </div>
+                    <div class="form-group">
+                        <label>Link 3 Reward ($)</label>
+                        <input type="number" id="link3-reward" step="0.01">
+                    </div>
+                    <button class="btn-primary" onclick="saveLinkSettings()">Save Settings</button>
+                </div>
+
+                <div class="settings-card">
+                    <h2>YouTube Video Task Settings</h2>
+                    <div class="form-group">
+                        <label>Video 1 URL</label>
+                        <input type="url" id="video1-url" placeholder="https://youtube.com/watch?v=...">
+                    </div>
+                    <div class="form-group">
+                        <label>Video 1 Code</label>
+                        <input type="text" id="video1-code" placeholder="SECRET123">
+                    </div>
+                    <div class="form-group">
+                        <label>Video 1 Reward ($)</label>
+                        <input type="number" id="video1-reward" step="0.01">
+                    </div>
+                    <button class="btn-primary" onclick="saveVideoSettings()">Save Settings</button>
+                </div>
+
+                <div class="settings-card">
+                    <h2>Daily Login Bonus</h2>
+                    <div class="form-group">
+                        <label>Reward Amount ($)</label>
+                        <input type="number" id="login-bonus-amount" step="0.01">
+                    </div>
+                    <button class="btn-primary" onclick="saveLoginBonusSettings()">Save Settings</button>
+                </div>
+
+                <div class="settings-card">
+                    <h2>One-Time Tasks</h2>
+                    <div class="form-group">
+                        <label>Telegram Channel URL</label>
+                        <input type="url" id="telegram-channel-url" placeholder="https://t.me/yourchannel">
+                    </div>
+                    <div class="form-group">
+                        <label>Telegram Task Reward ($)</label>
+                        <input type="number" id="telegram-task-reward" step="0.01">
+                    </div>
+                    <div class="form-group">
+                        <label>YouTube Channel URL</label>
+                        <input type="url" id="youtube-channel-url" placeholder="https://youtube.com/@yourchannel">
+                    </div>
+                    <div class="form-group">
+                        <label>YouTube Task Reward ($)</label>
+                        <input type="number" id="youtube-task-reward" step="0.01">
+                    </div>
+                    <button class="btn-primary" onclick="saveOneTimeTaskSettings()">Save Settings</button>
+                </div>
+            </section>
+
+            <!-- Spin Wheel Section -->
+            <section id="spin-section" class="admin-section">
+                <h1>Spin Wheel Settings</h1>
+                
+                <div class="settings-card">
+                    <h2>Multipliers Configuration</h2>
+                    <p>Configure the multipliers for each risk level</p>
+                    
+                    <h3>Low Risk</h3>
+                    <div class="multipliers-grid">
+                        <input type="number" id="low-mult-1" placeholder="0.5" step="0.1">
+                        <input type="number" id="low-mult-2" placeholder="1.0" step="0.1">
+                        <input type="number" id="low-mult-3" placeholder="1.5" step="0.1">
+                        <input type="number" id="low-mult-4" placeholder="2.0" step="0.1">
+                    </div>
+
+                    <h3>Mid Risk</h3>
+                    <div class="multipliers-grid">
+                        <input type="number" id="mid-mult-1" placeholder="0.0" step="0.1">
+                        <input type="number" id="mid-mult-2" placeholder="1.5" step="0.1">
+                        <input type="number" id="mid-mult-3" placeholder="1.9" step="0.1">
+                        <input type="number" id="mid-mult-4" placeholder="2.0" step="0.1">
+                        <input type="number" id="mid-mult-5" placeholder="3.0" step="0.1">
+                    </div>
+
+                    <h3>High Risk</h3>
+                    <div class="multipliers-grid">
+                        <input type="number" id="high-mult-1" placeholder="0.0" step="0.1">
+                        <input type="number" id="high-mult-2" placeholder="0.0" step="0.1">
+                        <input type="number" id="high-mult-3" placeholder="2.0" step="0.1">
+                        <input type="number" id="high-mult-4" placeholder="5.0" step="0.1">
+                        <input type="number" id="high-mult-5" placeholder="10.0" step="0.1">
+                    </div>
+
+                    <button class="btn-primary" onclick="saveSpinSettings()">Save Settings</button>
+                </div>
+
+                <div class="settings-card">
+                    <h2>Spin Wheel Status</h2>
+                    <div class="form-group">
+                        <label>Enable/Disable Spin Wheel</label>
+                        <select id="spin-status">
+                            <option value="enabled">Enabled</option>
+                            <option value="disabled">Disabled</option>
+                        </select>
+                    </div>
+                    <button class="btn-primary" onclick="saveSpinStatus()">Save Status</button>
+                </div>
+            </section>
+
+            <!-- Withdrawals Section -->
+            <section id="withdrawals-section" class="admin-section">
+                <h1>Withdrawal Management</h1>
+                
+                <div class="settings-card">
+                    <h2>Withdrawal Settings</h2>
+                    <div class="form-group">
+                        <label>Minimum Withdrawal Amount ($)</label>
+                        <input type="number" id="min-withdrawal" step="0.01">
+                    </div>
+                    <div class="form-group">
+                        <label>Payment Methods (comma separated)</label>
+                        <input type="text" id="payment-methods" placeholder="PayPal, Payoneer, Bank Transfer">
+                    </div>
+                    <button class="btn-primary" onclick="saveWithdrawalSettings()">Save Settings</button>
+                </div>
+
+                <div class="settings-card">
+                    <h2>Pending Withdrawals</h2>
+                    <div class="withdrawals-table">
+                        <table>
+                            <thead>
+                                <tr>
+                                    <th>User ID</th>
+                                    <th>Amount</th>
+                                    <th>Method</th>
+                                    <th>Account</th>
+                                    <th>Date</th>
+                                    <th>Actions</th>
+                                </tr>
+                            </thead>
+                            <tbody id="pending-withdrawals-table"></tbody>
+                        </table>
+                    </div>
+                </div>
+
+                <div class="settings-card">
+                    <h2>Top Withdrawers (Display)</h2>
+                    <p>Add fake/real top withdrawers to display on user page</p>
+                    <div id="top-withdrawers-list"></div>
+                    <div class="form-group">
+                        <input type="text" id="new-withdrawer-name" placeholder="Name">
+                        <input type="number" id="new-withdrawer-amount" placeholder="Amount" step="0.01">
+                        <button class="btn-secondary" onclick="addTopWithdrawer()">Add</button>
+                    </div>
+                </div>
+            </section>
+
+            <!-- Referrals Section -->
+            <section id="referrals-section" class="admin-section">
+                <h1>Referral Settings</h1>
+                
+                <div class="settings-card">
+                    <h2>Referral Rewards</h2>
+                    <div class="form-group">
+                        <label>Referrer Reward ($)</label>
+                        <input type="number" id="referrer-reward" step="0.01" placeholder="2.66">
+                    </div>
+                    <div class="form-group">
+                        <label>Referee Reward ($)</label>
+                        <input type="number" id="referee-reward" step="0.01" placeholder="2.00">
+                    </div>
+                    <button class="btn-primary" onclick="saveReferralSettings()">Save Settings</button>
+                </div>
+
+                <div class="settings-card">
+                    <h2>Referral Statistics</h2>
+                    <div class="stats-grid">
+                        <div class="stat-card">
+                            <h3>Total Referrals</h3>
+                            <div class="stat-value" id="total-referrals">0</div>
+                        </div>
+                        <div class="stat-card">
+                            <h3>Referral Earnings Paid</h3>
+                            <div class="stat-value">$<span id="referral-earnings-paid">0.00</span></div>
+                        </div>
+                    </div>
+                </div>
+            </section>
+
+            <!-- Settings Section -->
+            <section id="settings-section" class="admin-section">
+                <h1>General Settings</h1>
+                
+                <div class="settings-card">
+                    <h2>Welcome Message</h2>
+                    <div class="form-group">
+                        <label>Welcome Title</label>
+                        <input type="text" id="welcome-title" placeholder="Welcome to Cat Fire!">
+                    </div>
+                    <div class="form-group">
+                        <label>Welcome Message</label>
+                        <textarea id="welcome-message" rows="3" placeholder="Start earning money today!"></textarea>
+                    </div>
+                    <button class="btn-primary" onclick="saveWelcomeSettings()">Save Settings</button>
+                </div>
+
+                <div class="settings-card">
+                    <h2>App Status</h2>
+                    <div class="form-group">
+                        <label>Maintenance Mode</label>
+                        <select id="maintenance-mode">
+                            <option value="off">Off</option>
+                            <option value="on">On</option>
+                        </select>
+                    </div>
+                    <button class="btn-primary" onclick="saveAppStatus()">Save Status</button>
+                </div>
+            </section>
+        </main>
+    </div>
+
+    <script src="js/config.js"></script>
+    <script src="js/firebase-init.js"></script>
+    <script src="js/admin.js"></script>
+</body>
+</html>

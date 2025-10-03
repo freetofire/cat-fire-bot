@@ -1,0 +1,374 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <title>Cat Fire - Earn Money</title>
+    <link rel="stylesheet" href="styles/main.css">
+    <script src="https://telegram.org/js/telegram-web-app.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/10.7.1/firebase-app-compat.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/10.7.1/firebase-auth-compat.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/10.7.1/firebase-database-compat.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/10.7.1/firebase-firestore-compat.js"></script>
+    <script src='//libtl.com/sdk.js' data-zone='9937367' data-sdk='show_9937367'></script>
+</head>
+<body>
+    <!-- VPN Detection Warning -->
+    <div id="vpn-warning" class="vpn-warning hidden">
+        <div class="vpn-warning-content">
+            <div class="warning-icon">⚠️</div>
+            <h2>VPN Detected</h2>
+            <p>Please disable your VPN to continue using this application.</p>
+            <button onclick="location.reload()" class="btn-primary">Retry</button>
+        </div>
+    </div>
+
+    <!-- Welcome Modal -->
+    <div id="welcome-modal" class="modal hidden">
+        <div class="modal-content">
+            <h2>Welcome to Cat Fire!</h2>
+            <p>Earn money by completing tasks, playing games, and referring friends!</p>
+            <button id="close-welcome" class="btn-primary">Get Started</button>
+        </div>
+    </div>
+
+    <!-- Loading Screen -->
+    <div id="loading-screen" class="loading-screen">
+        <div class="loader"></div>
+        <p>Loading...</p>
+    </div>
+
+    <!-- Main App Container -->
+    <div id="app-container" class="app-container hidden">
+        <!-- Home Page -->
+        <div id="home-page" class="page active">
+            <div class="balance-section">
+                <div class="balance-info">
+                    <span class="balance-label">Total Balance</span>
+                    <h1 class="balance-amount">$<span id="user-balance">0.00</span></h1>
+                </div>
+                <button class="btn-withdraw" onclick="navigateTo('withdraw')">Withdraw</button>
+            </div>
+
+            <div class="tasks-container">
+                <h2 class="section-title">Tasks</h2>
+                
+                <!-- Task 1: Spin Wheel Game -->
+                <div class="task-card" onclick="openSpinWheel()">
+                    <div class="task-icon">🎰</div>
+                    <div class="task-info">
+                        <h3>Spin & Win</h3>
+                        <p>Play the spin wheel to win rewards</p>
+                    </div>
+                    <div class="task-arrow">→</div>
+                </div>
+
+                <!-- Task 2: Daily Tasks -->
+                <div class="task-card" onclick="openDailyTasks()">
+                    <div class="task-icon">📋</div>
+                    <div class="task-info">
+                        <h3>Daily Tasks</h3>
+                        <p>Complete daily tasks to earn</p>
+                    </div>
+                    <div class="task-arrow">→</div>
+                </div>
+
+                <!-- Task 3: One-Time Tasks -->
+                <div class="task-card" onclick="openOneTimeTasks()">
+                    <div class="task-icon">⭐</div>
+                    <div class="task-info">
+                        <h3>Special Tasks</h3>
+                        <p>Join channels and subscribe</p>
+                    </div>
+                    <div class="task-arrow">→</div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Withdraw Page -->
+        <div id="withdraw-page" class="page">
+            <div class="page-header">
+                <button class="btn-back" onclick="navigateTo('home')">←</button>
+                <h2>Withdraw</h2>
+            </div>
+
+            <div class="withdraw-notice">
+                <p>Minimum withdrawal amount: $<span id="min-withdraw">5.00</span></p>
+                <p>Processing time: 24-48 hours</p>
+            </div>
+
+            <form id="withdraw-form" class="withdraw-form">
+                <div class="form-group">
+                    <label>Amount ($)</label>
+                    <input type="number" id="withdraw-amount" step="0.01" min="0" placeholder="Enter amount" required>
+                </div>
+
+                <div class="form-group">
+                    <label>Payment Method</label>
+                    <select id="payment-method" required>
+                        <option value="">Select payment method</option>
+                    </select>
+                </div>
+
+                <div class="form-group">
+                    <label>Mobile Number</label>
+                    <input type="tel" id="mobile-number" placeholder="Enter mobile number" required>
+                </div>
+
+                <div class="form-group">
+                    <label>Payment Account ID</label>
+                    <input type="text" id="payment-account" placeholder="Enter account ID/email" required>
+                </div>
+
+                <button type="submit" class="btn-primary btn-full">Submit Withdrawal</button>
+            </form>
+
+            <div class="withdrawal-history">
+                <h3>Withdrawal History</h3>
+                <div id="withdrawal-list" class="withdrawal-list"></div>
+            </div>
+
+            <div class="top-withdrawers">
+                <h3>Top Withdrawers</h3>
+                <div id="top-withdrawers-list" class="top-list"></div>
+            </div>
+        </div>
+
+        <!-- Refer to Earn Page -->
+        <div id="refer-page" class="page">
+            <div class="page-header">
+                <h2>Refer & Earn</h2>
+            </div>
+
+            <div class="referral-stats">
+                <div class="stat-card">
+                    <div class="stat-value" id="referral-count">0</div>
+                    <div class="stat-label">Total Referrals</div>
+                </div>
+                <div class="stat-card">
+                    <div class="stat-value">$<span id="referral-earnings">0.00</span></div>
+                    <div class="stat-label">Referral Earnings</div>
+                </div>
+            </div>
+
+            <div class="referral-info">
+                <h3>How it Works</h3>
+                <p>Share your referral link with friends. When they join and start earning, you get $2.66 and they get $2.00 as a welcome bonus!</p>
+            </div>
+
+            <div class="referral-link-section">
+                <label>Your Referral Link</label>
+                <div class="link-container">
+                    <input type="text" id="referral-link" readonly>
+                </div>
+                <div class="referral-buttons">
+                    <button class="btn-secondary" onclick="copyReferralLink()">Copy Link</button>
+                    <button class="btn-primary" onclick="shareReferralLink()">Share on Telegram</button>
+                </div>
+            </div>
+
+            <div class="referral-list">
+                <h3>Your Referrals</h3>
+                <div id="referral-users-list" class="users-list"></div>
+            </div>
+        </div>
+
+        <!-- Profile Page -->
+        <div id="profile-page" class="page">
+            <div class="page-header">
+                <h2>Profile</h2>
+            </div>
+
+            <div class="profile-info">
+                <div class="profile-avatar">
+                    <div class="avatar-circle" id="user-avatar">👤</div>
+                </div>
+                <h3 id="user-name">Loading...</h3>
+                <p class="user-id">ID: <span id="user-telegram-id">-</span></p>
+                <p class="user-username">@<span id="user-username">-</span></p>
+            </div>
+
+            <div class="balance-card">
+                <h3>Total Balance</h3>
+                <div class="balance-large">$<span id="profile-balance">0.00</span></div>
+            </div>
+
+            <div class="income-dashboard">
+                <h3>Income Dashboard</h3>
+                <div class="income-stats">
+                    <div class="income-item">
+                        <span class="income-label">Task Earnings</span>
+                        <span class="income-value">$<span id="task-earnings">0.00</span></span>
+                    </div>
+                    <div class="income-item">
+                        <span class="income-label">Game Earnings</span>
+                        <span class="income-value">$<span id="game-earnings">0.00</span></span>
+                    </div>
+                    <div class="income-item">
+                        <span class="income-label">Referral Earnings</span>
+                        <span class="income-value">$<span id="profile-referral-earnings">0.00</span></span>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Bottom Navigation -->
+        <nav class="bottom-nav">
+            <button class="nav-item active" onclick="navigateTo('home')">
+                <span class="nav-icon">🏠</span>
+                <span class="nav-label">Home</span>
+            </button>
+            <button class="nav-item" onclick="navigateTo('withdraw')">
+                <span class="nav-icon">💰</span>
+                <span class="nav-label">Withdraw</span>
+            </button>
+            <button class="nav-item" onclick="navigateTo('refer')">
+                <span class="nav-icon">👥</span>
+                <span class="nav-label">Refer</span>
+            </button>
+            <button class="nav-item" onclick="navigateTo('profile')">
+                <span class="nav-icon">👤</span>
+                <span class="nav-label">Profile</span>
+            </button>
+        </nav>
+    </div>
+
+    <!-- Spin Wheel Modal -->
+    <div id="spin-modal" class="modal hidden">
+        <div class="modal-content spin-modal-content">
+            <button class="modal-close" onclick="closeSpinWheel()">×</button>
+            <h2>Spin & Win</h2>
+            
+            <div class="spin-wheel-container">
+                <canvas id="spin-wheel" width="300" height="300"></canvas>
+                <div class="spin-pointer"></div>
+            </div>
+
+            <div class="bet-selection">
+                <button class="bet-btn" data-risk="low" onclick="selectRisk('low')">Low Risk</button>
+                <button class="bet-btn active" data-risk="mid" onclick="selectRisk('mid')">Mid Risk</button>
+                <button class="bet-btn" data-risk="high" onclick="selectRisk('high')">High Risk</button>
+            </div>
+
+            <div class="bet-amounts">
+                <button class="amount-btn" onclick="selectAmount(500)">500</button>
+                <button class="amount-btn" onclick="selectAmount(2500)">2,500</button>
+                <button class="amount-btn" onclick="selectAmount(10000)">10,000</button>
+                <button class="amount-btn" onclick="selectAmount(50000)">50,000</button>
+            </div>
+
+            <div class="selected-bet">
+                <p>Selected: $<span id="selected-amount">0</span></p>
+            </div>
+
+            <button id="spin-btn" class="btn-primary btn-full" onclick="spinWheel()">SPIN</button>
+        </div>
+    </div>
+
+    <!-- Daily Tasks Modal -->
+    <div id="daily-tasks-modal" class="modal hidden">
+        <div class="modal-content">
+            <button class="modal-close" onclick="closeDailyTasks()">×</button>
+            <h2>Daily Tasks</h2>
+
+            <div class="daily-tasks-list">
+                <!-- Watch Ad Task -->
+                <div class="daily-task-item">
+                    <div class="task-header">
+                        <h3>Watch Ads</h3>
+                        <span class="task-reward">+$<span id="ad-reward">0.50</span></span>
+                    </div>
+                    <p>Watch ads to earn rewards</p>
+                    <p class="task-limit">Daily Limit: <span id="ad-completed">0</span>/<span id="ad-limit">10</span></p>
+                    <button class="btn-task" onclick="watchAd()">Watch Ad</button>
+                </div>
+
+                <!-- Visit Link Task -->
+                <div class="daily-task-item">
+                    <div class="task-header">
+                        <h3>Visit Links</h3>
+                        <span class="task-reward">+$<span id="link-reward">1.00</span></span>
+                    </div>
+                    <p>Visit advertiser links for rewards</p>
+                    <p class="task-limit">Daily Limit: <span id="link-completed">0</span>/3</p>
+                    <button class="btn-task" onclick="visitLink()">Visit Link</button>
+                </div>
+
+                <!-- YouTube Video Task -->
+                <div class="daily-task-item">
+                    <div class="task-header">
+                        <h3>Watch YouTube Videos</h3>
+                        <span class="task-reward">+$<span id="video-reward">0.75</span></span>
+                    </div>
+                    <p>Watch videos and collect codes</p>
+                    <p class="task-limit">Daily Limit: <span id="video-completed">0</span>/3</p>
+                    <button class="btn-task" onclick="watchVideo()">Watch Video</button>
+                </div>
+
+                <!-- Daily Login Bonus -->
+                <div class="daily-task-item">
+                    <div class="task-header">
+                        <h3>Daily Login Bonus</h3>
+                        <span class="task-reward">+$<span id="login-reward">0.25</span></span>
+                    </div>
+                    <p>Claim your daily login bonus</p>
+                    <button id="login-bonus-btn" class="btn-task" onclick="claimLoginBonus()">Claim Bonus</button>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- One-Time Tasks Modal -->
+    <div id="onetime-tasks-modal" class="modal hidden">
+        <div class="modal-content">
+            <button class="modal-close" onclick="closeOneTimeTasks()">×</button>
+            <h2>Special Tasks</h2>
+
+            <div class="onetime-tasks-list">
+                <!-- Telegram Channel Task -->
+                <div class="onetime-task-item" id="telegram-task">
+                    <div class="task-header">
+                        <h3>Join Telegram Channel</h3>
+                        <span class="task-reward">+$<span id="telegram-reward">2.00</span></span>
+                    </div>
+                    <p>Join our Telegram channel</p>
+                    <button class="btn-task" onclick="joinTelegramChannel()">Join Channel</button>
+                </div>
+
+                <!-- YouTube Subscribe Task -->
+                <div class="onetime-task-item" id="youtube-task">
+                    <div class="task-header">
+                        <h3>Subscribe YouTube Channel</h3>
+                        <span class="task-reward">+$<span id="youtube-reward">2.00</span></span>
+                    </div>
+                    <p>Subscribe to our YouTube channel</p>
+                    <button class="btn-task" onclick="subscribeYouTube()">Subscribe</button>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Video Code Modal -->
+    <div id="video-code-modal" class="modal hidden">
+        <div class="modal-content">
+            <button class="modal-close" onclick="closeVideoCode()">×</button>
+            <h2>Enter Video Code</h2>
+            <p>Watch the video and enter the code shown</p>
+            <input type="text" id="video-code-input" placeholder="Enter code" class="form-control">
+            <button class="btn-primary btn-full" onclick="submitVideoCode()">Submit Code</button>
+        </div>
+    </div>
+
+    <script src="js/config.js"></script>
+    <script src="js/firebase-init.js"></script>
+    <script src="js/telegram.js"></script>
+    <script src="js/vpn-detection.js"></script>
+    <script src="js/navigation.js"></script>
+    <script src="js/spin-wheel.js"></script>
+    <script src="js/tasks.js"></script>
+    <script src="js/referral.js"></script>
+    <script src="js/withdraw.js"></script>
+    <script src="js/profile.js"></script>
+    <script src="js/app.js"></script>
+</body>
+</html>
