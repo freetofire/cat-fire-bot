@@ -99,3 +99,5 @@ async function isUserBlocked(userId) {
     return false
   }
 }
+
+export { auth, db, rtdb, getCurrentUserData, updateUserBalance, updateEarnings, logTransaction, isUserBlocked }
