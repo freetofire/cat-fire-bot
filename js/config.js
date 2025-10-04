@@ -20,7 +20,7 @@ const TELEGRAM_BOT_CONFIG = {
 
 // Admin Configuration
 const ADMIN_CONFIG = {
-  adminEmail: "admin@catfire.com", // Change this
+  adminEmail: "ttsc@gmail.com", // Change this
   adminTelegramId: "7109891636",
 }
 
