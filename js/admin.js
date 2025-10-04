@@ -10,12 +10,6 @@ import {
   onSnapshot,
 } from "https://www.gstatic.com/firebasejs/11.2.0/firebase-firestore.js"
 import { ref, get, update } from "https://www.gstatic.com/firebasejs/11.2.0/firebase-database.js"
-import {
-  signInWithEmailAndPassword,
-  onAuthStateChanged,
-  signOut,
-  getDoc, // Declare the getDoc variable here
-} from "https://www.gstatic.com/firebasejs/11.2.0/firebase-auth.js"
 
 class AdminPanel {
   constructor() {
